@@ -9,6 +9,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './config/typeorm';
 import { OrganizationStorage } from './common/storage/organization-storage';
 import { OrganizationInterceptor } from './common/interceptors/organization.interceptor';
+import { CommentsService } from './comments/comments.service';
+import { CommentsController } from './comments/comments.controller';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -22,8 +25,9 @@ import { OrganizationInterceptor } from './common/interceptors/organization.inte
     OrganizationModule,
     UsersModule,
     TicketsModule,
+    CommentsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, CommentsController],
   providers: [
     AppService,
     OrganizationStorage,
@@ -31,6 +35,23 @@ import { OrganizationInterceptor } from './common/interceptors/organization.inte
       provide: 'APP_INTERCEPTOR',
       useClass: OrganizationInterceptor,
     },
+    CommentsService,
   ],
 })
 export class AppModule {}
+
+// Request comes in
+//       ↓
+// JWT Guard sets request.user
+//       ↓
+// OrganizationInterceptor runs
+//       ↓
+// Stores organizationId in AsyncLocalStorage
+//       ↓
+// Controller executes
+//       ↓
+// Services execute
+//       ↓
+// Anywhere:
+// organizationStorage.getOrganizationId()
+// works

@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
+import { Organization } from '@/src/organization/enitity/organization.entity';
 import { User } from '@/src/users/entity/user.entity';
 import {
   Column,
@@ -35,6 +36,12 @@ export class Ticket {
 
   @ManyToOne(() => User, { nullable: true })
   assignedAgent?: User;
+
+  @Column()
+  organizationId!: string;
+
+  @ManyToOne(() => Organization)
+  organization!: Organization;
 
   @CreateDateColumn()
   createdAt!: Date;

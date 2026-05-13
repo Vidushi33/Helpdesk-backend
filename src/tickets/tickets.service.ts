@@ -4,12 +4,14 @@ import { Ticket } from './entity/ticket.entity';
 import { Repository } from 'typeorm';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { User } from '../users/entity/user.entity';
+import { OrganizationStorage } from '../common/storage/organization-storage';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket) private ticketRepo: Repository<Ticket>,
     @InjectRepository(User) private userRepo: Repository<User>,
+    private readonly storage: OrganizationStorage,
   ) {}
 
   //   Create a new ticket
@@ -37,6 +39,7 @@ export class TicketsService {
       status,
       creator,
       assignedAgent: assignedAgent || undefined,
+      organizationId: this.storage.getOrganizationId(),
     });
 
     return this.ticketRepo.save(ticket);
@@ -44,15 +47,25 @@ export class TicketsService {
 
   //   Get all tickets with creator and assigned agent details
   async getAllTickets(): Promise<Ticket[]> {
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
     return this.ticketRepo.find({
+      where: { organizationId: orgId },
+      order: { createdAt: 'DESC' },
       relations: ['creator', 'assignedAgent'],
     });
   }
 
   //   Get a single ticket by ID with creator and assigned agent details
   async getTicketById(id: string): Promise<Ticket> {
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
     const ticket = await this.ticketRepo.findOne({
-      where: { id },
+      where: { id, organizationId: orgId },
       relations: ['creator', 'assignedAgent'],
     });
 
@@ -68,7 +81,14 @@ export class TicketsService {
     id: string,
     data: Partial<CreateTicketDto>,
   ): Promise<Ticket> {
-    const ticket = await this.ticketRepo.findOneBy({ id });
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
+    const ticket = await this.ticketRepo.findOne({
+      where: { id, organizationId: orgId },
+      relations: ['creator', 'assignedAgent'],
+    });
     if (!ticket) {
       throw new NotFoundException('Ticket Not Found');
     }
@@ -96,7 +116,14 @@ export class TicketsService {
     id: string,
     status: Ticket['status'],
   ): Promise<Ticket> {
-    const ticket = await this.ticketRepo.findOneBy({ id });
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
+    const ticket = await this.ticketRepo.findOne({
+      where: { id, organizationId: orgId },
+      relations: ['creator', 'assignedAgent'],
+    });
     if (!ticket) {
       throw new NotFoundException('Ticket Not Found');
     }
@@ -105,8 +132,15 @@ export class TicketsService {
   }
 
   //   Reassign a ticket to a different agent
-  async reassignAgent(id: string, newAgentId: string): Promise<Ticket> {
-    const ticket = await this.ticketRepo.findOneBy({ id });
+  async reassignAgent(ticketId: string, newAgentId: string): Promise<Ticket> {
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
+    const ticket = await this.ticketRepo.findOne({
+      where: { id: ticketId, organizationId: orgId },
+      relations: ['creator', 'assignedAgent'],
+    });
     if (!ticket) {
       throw new NotFoundException('Ticket Not Found');
     }
@@ -121,7 +155,13 @@ export class TicketsService {
 
   //   Delete a ticket
   async deleteTicket(id: string): Promise<Ticket> {
-    const ticket = await this.ticketRepo.findOneBy({ id });
+    const orgId = this.storage.getOrganizationId();
+    if (!orgId) {
+      throw new NotFoundException('Organization ID Not Found in Storage');
+    }
+    const ticket = await this.ticketRepo.findOne({
+      where: { id, organizationId: orgId },
+    });
     if (!ticket) {
       throw new NotFoundException('Ticket Not Found');
     }

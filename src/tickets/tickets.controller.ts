@@ -36,16 +36,7 @@ export class TicketsController {
     return this.ticketsService.create(body);
   }
 
-  @Put(':id')
-  @Roles(UserRole.ADMIN)
-  updateTicket(
-    @Param('id') id: string,
-    @Body() body: CreateTicketDto,
-  ): Promise<Ticket> {
-    return this.ticketsService.updateTicket(id, body);
-  }
-
-  @Patch(':id/status')
+  @Patch('status/:id')
   @Roles(UserRole.ADMIN)
   updateTicketStatus(
     @Param('id') id: string,
@@ -54,13 +45,22 @@ export class TicketsController {
     return this.ticketsService.updateTicketStatus(id, status);
   }
 
-  @Patch(':id/reassignAgent')
+  @Patch('reassignAgent/:id')
   @Roles(UserRole.ADMIN)
   reassignTicketAgent(
     @Param('id') id: string,
     @Body('agentId') agentId: string,
   ): Promise<Ticket> {
     return this.ticketsService.reassignAgent(id, agentId);
+  }
+
+  @Put(':id')
+  @Roles(UserRole.ADMIN)
+  updateTicket(
+    @Param('id') id: string,
+    @Body() body: CreateTicketDto,
+  ): Promise<Ticket> {
+    return this.ticketsService.updateTicket(id, body);
   }
 
   @Delete(':id')
